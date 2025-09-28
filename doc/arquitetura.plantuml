@@ -1,0 +1,96 @@
+@startuml Arquitetura
+<style>
+header {
+    HorizontalAlignment center
+    FontSize 26
+    FontColor black
+}
+</style>
+
+left to right direction
+header Arquitetura
+
+' Azure
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/release/2-2/dist
+
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/AzureSimplified.puml
+
+!includeurl AzurePuml/Containers/AzureContainerRegistry.puml
+!includeurl AzurePuml/Web/AzureAPIManagement.puml
+!includeurl AzurePuml/Databases/AzureDatabaseForPostgreSQL.puml
+!includeurl AzurePuml/DevOps/AzurePipelines.puml
+!includeurl AzurePuml/Identity/AzureActiveDirectory.puml
+!includeurl AzurePuml/Networking/AzureLoadBalancer.puml
+!includeurl AzurePuml/Security/AzureKeyVault.puml
+
+' Kubernetes
+!define KubernetesPuml https://raw.githubusercontent.com/dcasati/kubernetes-PlantUML/master/dist
+
+!includeurl KubernetesPuml/kubernetes_Common.puml
+!includeurl KubernetesPuml/kubernetes_Context.puml
+!includeurl KubernetesPuml/kubernetes_Simplified.puml
+
+!includeurl KubernetesPuml/OSS/KubernetesApi.puml
+!includeurl KubernetesPuml/OSS/KubernetesIng.puml
+!includeurl KubernetesPuml/OSS/KubernetesPod.puml
+'custom
+!include doc/assets/helm.puml
+
+skinparam defaultTextAlignment center
+
+actor "comerciante" as comerciante
+collections "Client Apps" as clientApp
+
+Helm(helm, "Helm Charts")
+' Azure Components
+together  {
+    AzureActiveDirectory(aad, "Azure Active Directory", "Global")
+    AzureKeyVault(keyvault, "AzureKey Vault", "Global")
+    aad -[hidden]u- keyvault
+}
+together  {
+    AzureContainerRegistry(acr, "ACR", "Sudeste do Brasil")
+}
+together  {
+    AzureDatabaseForPostgreSQL(sqlEscrita, "Escrita", "Sudeste do Brasil")
+    AzureDatabaseForPostgreSQL(sqlLeitura, "Leitura", "Sudeste do Brasil")
+}
+AzurePipelines(ap, "CI/CD Azure Pipelines", "Global")
+AzureAPIManagement(apim, "API Management", "Sudeste do Brasil")
+
+' Kubernetes Components
+Cluster_Boundary(cluster, "Kubernetes Cluster - AKS") {
+    KubernetesApi(KubernetesApi, "Kubernetes API", "")
+
+    Namespace_Boundary(nsFrontEnd, "Front End") {
+        KubernetesIng(ingress, "API Gateway", "")
+    }
+
+    Namespace_Boundary(nsBackEnd, "Back End") {
+        KubernetesPod(fluxoCaixa, "Fluxo Caixa API", ".NET")
+        KubernetesPod(consolidadoApi, "Consolidado API", ".NET")
+    }
+}
+
+Rel(comerciante, clientApp, "Usa")
+Rel(clientApp, apim, "HTTP")
+Rel(apim, ingress, "HTTP")
+
+Rel(ingress, fluxoCaixa, "HTTP")
+Rel(ingress, consolidadoApi, "HTTP")
+
+
+Rel(fluxoCaixa, sqlEscrita, "Escrita")
+Rel(consolidadoApi, sqlLeitura, "Leitura")
+
+Rel_R(sqlEscrita, sqlLeitura, "Consistência Eventual")
+
+cluster -[hidden]D- aad
+
+Rel(ap, acr, "Image push")
+Rel_U(KubernetesApi, acr, "Image pull")
+
+
+Rel(helm, KubernetesApi, "Helm")
+@enduml
