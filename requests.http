@@ -1,26 +1,14 @@
 # URL Container fluxo caixa 
-@baseUrlFluxoCaixa = http://localhost:8080
-
-
-##
-curl -X 'POST' \
-  'http://localhost:8080/Lancamentos' \
-  -H 'accept: text/plain' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "descricao": "string",
-  "valor": 10,
-  "tipo": 1
-}'
-
+@baseUrlFluxoCaixa = http://localhost:7550
+@baseUrlConsolidado = http://localhost:7551
 
 ### Criar entrada
 POST {{baseUrlFluxoCaixa}}/Lancamentos
 Content-Type: application/json
 
 {
-  "descricao": "Entrada: Pagamento Pedido 1",
-  "valor": 1350.5,
+  "descricao": "Entrada: Pagamento Cliente",
+  "valor": 100.5,
   "tipo": 1
 }
 
@@ -34,6 +22,28 @@ Content-Type: application/json
   "tipo": 2
 }
 
+### Criar lançamento comparametros
+# @prompt descricao Descrição entre 3 a 255 caracteres
+# @prompt valor Valor maior que 0
+# @prompt tipo 1 para entrada, 2 para saída
+POST {{baseUrlFluxoCaixa}}/Lancamentos
+Content-Type: application/json
+
+{
+  "descricao": "{{descricao}}",
+  "valor": {{valor}},
+  "tipo": {{tipo}}
+}
+
+
 ### Get all items
 GET {{baseUrlFluxoCaixa}}/Lancamentos/Listar
 Accept: application/json
+
+
+@dataAtual = {{dataAtual}}
+
+### Get Relatorio Consolidado
+GET {{baseUrlConsolidado}}/Diario?Data={{$localDatetime 'YYYY-MM-DD' [offset option]}}
+Accept: application/pdf
+

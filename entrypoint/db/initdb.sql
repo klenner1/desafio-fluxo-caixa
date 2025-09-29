@@ -3,5 +3,6 @@ CREATE TABLE "Lancamentos" (
     "Descricao" text NOT NULL,
     "Valor" numeric NOT NULL,
     "Tipo" integer NOT NULL,
+    "DataCriacao" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "PK_Lancamentos" PRIMARY KEY ("Id")
 );

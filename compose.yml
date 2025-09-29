@@ -4,16 +4,29 @@ services:
      context: ./fluxo-caixa-api
      dockerfile: /src/Api/Dockerfile
     ports:
-     - "8080:80"
+     - "7550:80"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: "http://+:80" # Configure ASP.NET Core to listen on port 80
-      pgsqlConnectionString : "Host=db_fluxo_caixa_escrita;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
+      ASPNETCORE_URLS: "http://+:80"
+      pgsqlConnectionString : "Host=db;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
     depends_on:
-      - db_fluxo_caixa_escrita
+      - db
+
+  consolidado_api:
+    build:
+     context: ./consolidado-api
+     dockerfile: /src/Api/Dockerfile
+    ports:
+     - "7551:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:80"
+      pgsqlConnectionString : "Host=db;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
+    depends_on:
+      - db
   
 
-  db_fluxo_caixa_escrita:
+  db:
     image: postgres:16
     environment:
       POSTGRES_DB: fluxo_caixa
