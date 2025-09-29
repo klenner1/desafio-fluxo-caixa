@@ -1,0 +1,39 @@
+# URL Container fluxo caixa 
+@baseUrlFluxoCaixa = http://localhost:8080
+
+
+##
+curl -X 'POST' \
+  'http://localhost:8080/Lancamentos' \
+  -H 'accept: text/plain' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "descricao": "string",
+  "valor": 10,
+  "tipo": 1
+}'
+
+
+### Criar entrada
+POST {{baseUrlFluxoCaixa}}/Lancamentos
+Content-Type: application/json
+
+{
+  "descricao": "Entrada: Pagamento Pedido 1",
+  "valor": 1350.5,
+  "tipo": 1
+}
+
+### Create a new item
+POST {{baseUrlFluxoCaixa}}/Lancamentos
+Content-Type: application/json
+
+{
+  "descricao": "Saida: Pagamento Fornecedor",
+  "valor": 100.5,
+  "tipo": 2
+}
+
+### Get all items
+GET {{baseUrlFluxoCaixa}}/Lancamentos/Listar
+Accept: application/json

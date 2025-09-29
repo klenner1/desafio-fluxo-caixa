@@ -1,0 +1,26 @@
+services:
+  api_fluxo_caixa:
+    build:
+     context: ./fluxo-caixa-api
+     dockerfile: /src/Api/Dockerfile
+    ports:
+     - "8080:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:80" # Configure ASP.NET Core to listen on port 80
+      pgsqlConnectionString : "Host=db_fluxo_caixa_escrita;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
+    depends_on:
+      - db_fluxo_caixa_escrita
+  
+
+  db_fluxo_caixa_escrita:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: fluxo_caixa
+      POSTGRES_USER: fluxo_caixa
+      POSTGRES_PASSWORD: fluxo_caixa
+    ports:
+      - "6015:5432"
+    volumes:
+      - .docker/db_escrita_data:/var/lib/postgresql/data
+      - ./entrypoint/db/:/docker-entrypoint-initdb.d/

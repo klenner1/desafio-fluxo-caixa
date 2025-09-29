@@ -1,17 +1,29 @@
+using Api.Extensions;
+using Infraestrutura.Contextos;
+using Microsoft.EntityFrameworkCore;
+using Aplicacao;
+using Infraestrutura;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddAplicacao();
+builder.Services.AddInfraestrutura();
+
+var connectionString = builder.Configuration.GetValue<string>("pgsqlConnectionString");
+
+builder.Services.AddDbContext<FluxoCaixaDbContext>(opt =>
+    opt.UseNpgsql(connectionString));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(op=>op.SwaggerEndpoint("/openapi/v1.json","Fluxo Caixa"));
+    app.AplicarMigracao();
 }
 
 app.UseHttpsRedirection();
@@ -20,4 +32,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
