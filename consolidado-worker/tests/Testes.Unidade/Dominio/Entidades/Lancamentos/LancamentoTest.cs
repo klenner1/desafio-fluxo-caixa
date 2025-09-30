@@ -14,96 +14,27 @@ public class LancamentoTest(LancamentoEntidadeTesteFixure lancamentoTesteFixure)
     public void CriarInstancia()
     {
         //Arrange
+        var id = _lancamentoTesteFixure.IdValido;
         var descricao = _lancamentoTesteFixure.DescricaoValida;
         var valor = _lancamentoTesteFixure.ValorValido;
         var tipo = _lancamentoTesteFixure.TipoValido;
+        var dataCriacao = _lancamentoTesteFixure.DataCriacaoValida;
         //Act
-        var lancamento = Lancamento.Criar(descricao, valor, tipo);
+        var lancamento = new Lancamento()
+        {
+            Id = id,
+            Descricao = descricao,
+            Valor = valor,
+            Tipo = tipo,
+            DataCriacao = dataCriacao,
+        };
 
         //Assert
         lancamento.Should().NotBeNull();
-        lancamento.Id.Should().NotBeEmpty();
+        lancamento.Id.Should().Be(id);
         lancamento.Descricao.Should().Be(descricao);
         lancamento.Valor.Should().Be(valor);
         lancamento.Tipo.Should().Be(tipo);
-        lancamento.DataCriacao.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+        lancamento.DataCriacao.Should().Be(dataCriacao);
     }
-
-    [Fact(DisplayName = nameof(CriarInstanciaErroQuandoDescricaoNull))]
-    public void CriarInstanciaErroQuandoDescricaoNull()
-    {
-        //Arrange
-        var valor = _lancamentoTesteFixure.ValorValido;
-        var tipo = _lancamentoTesteFixure.TipoValido;
-        //Act
-        var act = () => Lancamento.Criar(null!, valor, tipo);
-
-        //Assert
-        act.Should().Throw<ValidacaoEntidadeException>()
-            .WithMessage($"{nameof(Lancamento)}.{nameof(Lancamento.Descricao)}: Não deve ser nulo");
-    }
-
-    [Fact(DisplayName = nameof(CriarInstanciaErroQuandoDescricaoMenorQue3Caracteres))]
-    public void CriarInstanciaErroQuandoDescricaoMenorQue3Caracteres()
-    {
-        //Arrange
-        var descricao = _lancamentoTesteFixure.DescricaoInvalidaTamanhoMenorQue3;
-        var valor = _lancamentoTesteFixure.ValorValido;
-        var tipo = _lancamentoTesteFixure.TipoValido;
-        //Act
-        var act = () => Lancamento.Criar(descricao, valor, tipo);
-
-        //Assert
-        act.Should().Throw<ValidacaoEntidadeException>()
-            .WithMessage($"{nameof(Lancamento)}.{nameof(Lancamento.Descricao)}: Não deve ter tamanho menor que 3 caracteres");
-    }
-
-
-    [Fact(DisplayName = nameof(InstantiateErrorWhenNameIsGreaterThan255Characters))]
-    public void InstantiateErrorWhenNameIsGreaterThan255Characters()
-    {
-        //Arrange
-        var descricao = _lancamentoTesteFixure.DescricaoInvalidaTamanhoMaiorQue255;
-        var valor = _lancamentoTesteFixure.ValorValido;
-        var tipo = _lancamentoTesteFixure.TipoValido;
-        //Act
-        var act = () => Lancamento.Criar(descricao, valor, tipo);
-
-        //Assert
-        act.Should().Throw<ValidacaoEntidadeException>()
-            .WithMessage($"{nameof(Lancamento)}.{nameof(Lancamento.Descricao)}: Não deve ter tamanho maior que 255 caracteres");
-    }
-
-    [Fact(DisplayName = nameof(CriarInstanciaErroQuandoValorENegativo))]
-    public void CriarInstanciaErroQuandoValorENegativo()
-    {
-        //Arrange
-        var descricao = _lancamentoTesteFixure.DescricaoValida;
-        var valor = _lancamentoTesteFixure.ValorInvalidoMenorQue0;
-        var tipo = _lancamentoTesteFixure.TipoValido;
-        //Act
-        var act = () => Lancamento.Criar(descricao, valor, tipo);
-
-        //Assert
-        act.Should().Throw<ValidacaoEntidadeException>()
-            .WithMessage($"{nameof(Lancamento)}.{nameof(Lancamento.Valor)}: Deve ser maior ou igual a 0");
-    }
-
-
-    [Fact(DisplayName = nameof(CriarInstanciaErroQuandoTipoForaRangeDeETipoLancamento))]
-    public void CriarInstanciaErroQuandoTipoForaRangeDeETipoLancamento()
-    {
-        //Arrange
-        var descricao = _lancamentoTesteFixure.DescricaoValida;
-        var valor = _lancamentoTesteFixure.ValorValido;
-        var tipo = _lancamentoTesteFixure.TipoInvalido;
-        //Act
-        var act = () => Lancamento.Criar(descricao, valor, tipo);
-
-        //Assert
-        act.Should().Throw<ValidacaoEntidadeException>()
-            .WithMessage($"{nameof(Lancamento)}.{nameof(Lancamento.Tipo)}: Possui um intervalo de valores que não inclui o valor informado");
-    }
-
-
 }
