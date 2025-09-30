@@ -1,49 +1,96 @@
-# Descrição:
+# 🚀 Sistema de Fluxo de Caixa
 
-Este repositório é referente a um desafio para Arquiteto de software.
+## 🎯 Objetivo do Projeto
 
-- As aplicações foram desenvolvidas em .NET9 usando como base o Clear Architecture
-- O banco usado foi PostgreSQL
-- Para a demostração foi implementado com RabbitMQ
+Este repositório contém uma solução de backend desenvolvida para um desafio de Arquitetura de Software. O objetivo é implementar um sistema de **Controle de Fluxo de Caixa** que utiliza padrões de arquitetura modernos para desacoplamento e escalabilidade.
 
-## fluxo-caixa-api
-API para o cadastro de lançamentos de entra e saida
+A solução implementa o padrão CQRS, onde as operações de escrita (cadastro de lançamentos) e as operações de leitura/relatório (consolidação de saldo) são tratadas por serviços e modelos de dados separados, com **consistência eventual** garantida por mensageria.
 
-## consolidado-api
-API para geração de relatório de consolidação de saldo
+## 🛠️ Stack de Tecnologia
 
-## consolidado-worker
-Worker referente atualização dodos dados no bando de leitura
+| Categoria | Tecnologia | Observações |
+| :--- | :--- | :--- |
+| **Framework** | **.NET 9** | Base para todas as aplicações. |
+| **Banco de Dados** | **PostgreSQL** | Foi usado como Banco de dados para o Modelo de Escrita e para o modelo de Leitura. |
+| **Mensageria** | **RabbitMQ** | Message Broker para comunicação assíncrona entre o serviço de escrita e o worker de consolidação. |
+| **Contêineres** | **Docker / Docker Compose** | Orquestração e execução local de todos os serviços. |
+| **Testes** | **xUnit, Moq, FluentAssertions, Bogus** | Ferramentas para testes unitários e de integração. |
+| **Validações** | **FluentValidation** | Validação de requisições e entidades. |
+| **Geração PRD** | **QuestPDF** |  Biblioteca open source para geração de PDF. |
 
-## Desenho da solução
+## 📐 Arquitetura da Solução (CQRS e Consistência Eventual)
 
-![alt text](doc/image.png)
+A solução é composta por três componentes principais, que se comunicam via RabbitMQ para garantir o desacoplamento:
 
-# Instruções
-## Execução das aplicações 
-```sh
-docker compose up -d --build 
+### 1\. `fluxo-caixa-api` (Command Side)
+
+  * **Função:** Recebe as requisições HTTP para cadastrar novos lançamentos de **Entrada** ou **Saída** (Comandos).
+  * **Ação:** Salva o lançamento no Banco de Escrita (PostgreSQL) e, em seguida, **publica um evento** no RabbitMQ.
+  * **Porta Local:** `7550`
+
+### 2\. `consolidado-worker` (Projetor/Event Handler)
+
+  * **Função:** Atua como o **Processador de Eventos**. Escuta os eventos de lançamento publicados pelo `fluxo-caixa-api` no RabbitMQ.
+  * **Ação:** Aplica a lógica de **Projeção**, atualizando de forma assíncrona o **saldo consolidado** no Banco de Leitura.
+
+### 3\. `consolidado-api` (Query Side)
+
+  * **Função:** Recebe as requisições HTTP para gerar o **Relatório de Consolidação de Saldo** (Consultas).
+  * **Ação:** Acessa **apenas o Banco de Leitura** para retornar o saldo consolidado, garantindo respostas rápidas e otimizadas.
+  * **Porta Local:** `7551`
+
+-----
+
+## 💻 Configuração e Execução Local
+
+### Pré-requisitos
+
+  * [Docker](https://www.docker.com/products/docker-desktop)
+  * [Git](https://git-scm.com/downloads)
+  * [VS Code (Opcional)](https://code.visualstudio.com/) com a extensão [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+
+### 1\. Clonar o Repositório
+
+```bash
+git clone https://github.com/klenner1/desafio-fluxo-caixa.git
+cd desafio-fluxo-caixa
 ```
 
-## Realização das chamada HTTP
-Diponibilizado o arquivo `requests.http` onde contem exemplas das chamada e pode ser executado pelo VSCode atravém da extenção [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+### 2\. Executar as Aplicações
 
-com alternativa pode ser realizado pelo swagger de cada aplicação 
-- [fluxo-caixa-api](http://localhost:7550/swagger/index.html)
-- [consolidado-api](http://localhost:7551/swagger/index.html)
+O arquivo `compose.yml` inicia todos os serviços necessários (PostgreSQL, RabbitMQ, APIs e Worker).
 
+```bash
+docker compose up -d --build
+```
 
-## Ferramentas Utilizadas
- - SwaggerUI
- - FluentValidation
- - QuestPDF
- - EntityFrameworkCore
- - Npgsql
- - Azure Functions
- - xUnit
- - Bogus
- - FluentAssertions
- - Moq
+## ⚙️ Uso da Aplicação (Testando o Fluxo)
 
-## Melhorias possíveis 
-- Implementação do CQRS e a substituiçao do RabbitMQ pelo Apache Kafka  
+Após a execução, você pode interagir com as APIs das seguintes formas:
+
+### A. Via Arquivo `requests.http`
+
+O arquivo `requests.http` na raiz do projeto contém exemplos formatados para o **REST Client** do VS Code, permitindo testar facilmente os fluxos de escrita e leitura.
+
+### B. Via Swagger UI
+
+Você pode acessar os painéis do Swagger para testar as rotas manualmente:
+
+| Serviço | URL do Swagger |
+| :--- | :--- |
+| **fluxo-caixa-api** | [http://localhost:7550/swagger/index.html](https://www.google.com/search?q=http://localhost:7550/swagger/index.html) |
+| **consolidado-api** | [http://localhost:7551/swagger/index.html](https://www.google.com/search?q=http://localhost:7551/swagger/index.html) |
+
+#### Fluxo de Teste Sugerido:
+
+1.  **Escrita (fluxo-caixa-api):** Use a rota POST para criar lançamentos de `Entrada` e `Saída`.
+2.  **Verificação Assíncrona (consolidado-worker):** Aguarde alguns segundos (o tempo que o worker leva para consumir a mensagem do RabbitMQ e processar).
+3.  **Leitura (consolidado-api):** Use a rota GET para obter o relatório de consolidação de saldo e verificar se os lançamentos foram aplicados.
+
+-----
+
+## 📈 Potenciais de Melhorias 
+
+  * **Substituição do RabbitMQ:** Mudar para uma plataforma de **Event Streaming** como o Kafka para dar suporte completo ao padrão **Event Sourcing**, permitindo a reconstrução de projeções.
+  * **Banco de Dados de Leitura:** Utilizar um banco de dados NoSQL (ex: MongoDB) no modelo de Leitura para otimizar ainda mais o desempenho das consultas.
+  * **Adição de Caching:** Implementar camadas de caching (ex: Redis) no modelo de Leitura para consultas frequentes.
