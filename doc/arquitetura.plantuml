@@ -23,6 +23,7 @@ header Arquitetura
 !includeurl AzurePuml/Identity/AzureActiveDirectory.puml
 !includeurl AzurePuml/Networking/AzureLoadBalancer.puml
 !includeurl AzurePuml/Security/AzureKeyVault.puml
+!includeurl AzurePuml/Compute/AzureFunction.puml
 
 ' Kubernetes
 !define KubernetesPuml https://raw.githubusercontent.com/dcasati/kubernetes-PlantUML/master/dist
@@ -36,6 +37,7 @@ header Arquitetura
 !includeurl KubernetesPuml/OSS/KubernetesPod.puml
 'custom
 !include doc/assets/helm.puml
+!include doc/assets/rabbitmq.puml
 
 skinparam defaultTextAlignment center
 
@@ -53,8 +55,10 @@ together  {
     AzureContainerRegistry(acr, "ACR", "Sudeste do Brasil")
 }
 together  {
-    AzureDatabaseForPostgreSQL(sqlEscrita, "Escrita", "Sudeste do Brasil")
-    AzureDatabaseForPostgreSQL(sqlLeitura, "Leitura", "Sudeste do Brasil")
+    AzureDatabaseForPostgreSQL(sqlFluxoCaixa, "DB Fluxo Caixa", "Sudeste do Brasil")
+    Rabbitmq(broker, "Message Broker")
+    AzureFunction(consolidacaoWorker, "Consolidação Worker", "Sudeste do Brasil")
+    AzureDatabaseForPostgreSQL(sqlConsolidado, "DB Consolidado", "Sudeste do Brasil")
 }
 AzurePipelines(ap, "CI/CD Azure Pipelines", "Global")
 AzureAPIManagement(apim, "API Management", "Sudeste do Brasil")
@@ -81,10 +85,12 @@ Rel(ingress, fluxoCaixa, "HTTP")
 Rel(ingress, consolidadoApi, "HTTP")
 
 
-Rel(fluxoCaixa, sqlEscrita, "Escrita")
-Rel(consolidadoApi, sqlLeitura, "Leitura")
+Rel(fluxoCaixa, sqlFluxoCaixa, "DB Fluxo Caixa")
+Rel(consolidadoApi, sqlConsolidado, "DB Consolidado")
 
-Rel_R(sqlEscrita, sqlLeitura, "Consistência Eventual")
+Rel_R(fluxoCaixa, broker,"Notifica")
+Rel_R(broker, consolidacaoWorker,"Notifica")
+Rel_R(consolidacaoWorker, sqlConsolidado, "Consistência Eventual")
 
 cluster -[hidden]D- aad
 
