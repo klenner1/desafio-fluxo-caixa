@@ -1,41 +1,36 @@
-﻿using Aplicacao.CasoDeUsos.Lancamentos.Criar;
+﻿using Aplicacao.CasoDeUsos.Lancamentos.Processar;
 using Aplicacao.Comum;
 using Aplicacao.Repositorios;
 using Dominio.Entidades;
 using Dominio.Exceptions;
 
-namespace Testes.Unidade.Aplicacao.CasoDeUsos.Lancamentos.Criar;
+namespace Testes.Unidade.Aplicacao.CasoDeUsos.Lancamentos.Processar;
 
-[Collection(nameof(CriarLancamentoTesteFixure))]
+[Collection(nameof(ProcessarLancamentoTesteFixure))]
 [Trait("Aplicacao", "CriarLancamento - Caso de uso")]
-public class CriarLancamentoTeste(CriarLancamentoTesteFixure lancamentoFixure)
+public class ProcessarLancamentoTeste(ProcessarLancamentoTesteFixure lancamentoFixure)
 {
 
-    private readonly CriarLancamentoTesteFixure lancamentoFixure = lancamentoFixure;
+    private readonly ProcessarLancamentoTesteFixure lancamentoFixure = lancamentoFixure;
 
     [Fact(DisplayName = nameof(CriarLancamento))]
     public async Task CriarLancamento()
     {
-        var mockRepositorio = CriarLancamentoTesteFixure.MockRepositorio;
-        var mockUnidadeDetrabalho = CriarLancamentoTesteFixure.MockUnidadeDeTrabalho;
-        var mockEventoDespachante = CriarLancamentoTesteFixure.MockEventoDespachante;
-        var casoDeUso = new CriarLancamento(
+        var mockRepositorio = ProcessarLancamentoTesteFixure.MockRepositorio;
+        var mockUnidadeDetrabalho = ProcessarLancamentoTesteFixure.MockUnidadeDeTrabalho;
+        var casoDeUso = new ProcessarLancamento(
             mockRepositorio.Object,
-            mockUnidadeDetrabalho.Object,
-            mockEventoDespachante.Object);
+            mockUnidadeDetrabalho.Object);
 
-        var requisicao = new CriarLancamentoRequisicao(
+        var requisicao = new ProcessarLancamentoRequisicao(
             lancamentoFixure.DescricaoValida,
             lancamentoFixure.ValorValido,
             lancamentoFixure.TipoValido);
 
-        var resposta = await casoDeUso.Executar(requisicao, CancellationToken.None);
+        var act = async () => await casoDeUso.Executar(requisicao, CancellationToken.None);
 
-        resposta.Should().NotBeNull();
-        resposta.Id.Should().NotBeEmpty();
-        resposta.Descricao.Should().Be(requisicao.Descricao);
-        resposta.Tipo.Should().Be(requisicao.Tipo);
-        resposta.DataCriacao.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(1));
+        await act.Should().NotThrowAsync();
+
 
         mockRepositorio.Verify(
             r => r.Inserir(It.IsAny<Lancamento>(), It.IsAny<CancellationToken>()),
@@ -52,16 +47,14 @@ public class CriarLancamentoTeste(CriarLancamentoTesteFixure lancamentoFixure)
     [Theory(DisplayName = nameof(DeveLancarExecaoQuandoEntidadeInvalida))]
     [MemberData(nameof(GetInvalidInputs))]
     public async Task DeveLancarExecaoQuandoEntidadeInvalida(
-        CriarLancamentoRequisicao requisicao,
+        ProcessarLancamentoRequisicao requisicao,
         string mensagemDeErro)
     {
-        var mockRepositorio = CriarLancamentoTesteFixure.MockRepositorio;
-        var mockUnidadeDetrabalho = CriarLancamentoTesteFixure.MockUnidadeDeTrabalho;
-        var mockEventoDespachante = CriarLancamentoTesteFixure.MockEventoDespachante;
-        var casoDeUso = new CriarLancamento(
+        var mockRepositorio = ProcessarLancamentoTesteFixure.MockRepositorio;
+        var mockUnidadeDetrabalho = ProcessarLancamentoTesteFixure.MockUnidadeDeTrabalho;
+        var casoDeUso = new ProcessarLancamento(
             mockRepositorio.Object,
-            mockUnidadeDetrabalho.Object,
-            mockEventoDespachante.Object);
+            mockUnidadeDetrabalho.Object);
 
         var act = async () => await casoDeUso.Executar(requisicao, CancellationToken.None);
 
@@ -79,29 +72,29 @@ public class CriarLancamentoTeste(CriarLancamentoTesteFixure lancamentoFixure)
             $"{nameof(IUnidadeDeTrabalho)}.{nameof(IUnidadeDeTrabalho.Commit)} não deve ser chamado");
     }
 
-    public static TheoryData<CriarLancamentoRequisicao, string> GetInvalidInputs()
+    public static TheoryData<ProcessarLancamentoRequisicao, string> GetInvalidInputs()
     {
-        var fixure = new CriarLancamentoTesteFixure();
+        var fixure = new ProcessarLancamentoTesteFixure();
         return new()
         {
             {
-                new CriarLancamentoRequisicao(null!,fixure.ValorValido,fixure.TipoValido ),
+                new ProcessarLancamentoRequisicao(null!,fixure.ValorValido,fixure.TipoValido ),
                 $"{nameof(Lancamento)}.{nameof(Lancamento.Descricao)}: Não deve ser nulo"
             },
             {
-                new CriarLancamentoRequisicao(fixure.DescricaoInvalidaTamanhoMaiorQue255,fixure.ValorValido,fixure.TipoValido),
+                new ProcessarLancamentoRequisicao(fixure.DescricaoInvalidaTamanhoMaiorQue255,fixure.ValorValido,fixure.TipoValido),
                 $"{nameof(Lancamento)}.{nameof(Lancamento.Descricao)}: Não deve ter tamanho maior que 255 caracteres"
             },
             {
-                new CriarLancamentoRequisicao(fixure.DescricaoInvalidaTamanhoMenorQue3,fixure.ValorValido,fixure.TipoValido),
+                new ProcessarLancamentoRequisicao(fixure.DescricaoInvalidaTamanhoMenorQue3,fixure.ValorValido,fixure.TipoValido),
                 $"{nameof(Lancamento)}.{nameof(Lancamento.Descricao)}: Não deve ter tamanho menor que 3 caracteres"
             },
             {
-                new CriarLancamentoRequisicao(fixure.DescricaoValida,fixure.ValorInvalidoMenorQue0,fixure.TipoValido),
+                new ProcessarLancamentoRequisicao(fixure.DescricaoValida,fixure.ValorInvalidoMenorQue0,fixure.TipoValido),
                 $"{nameof(Lancamento)}.{nameof(Lancamento.Valor)}: Deve ser maior ou igual a 0"
             },
             {
-                new CriarLancamentoRequisicao(fixure.DescricaoValida,fixure.ValorValido,fixure.TipoInvalido),
+                new ProcessarLancamentoRequisicao(fixure.DescricaoValida,fixure.ValorValido,fixure.TipoInvalido),
                 $"{nameof(Lancamento)}.{nameof(Lancamento.Tipo)}: Possui um intervalo de valores que não inclui o valor informado"
             }
         };

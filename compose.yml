@@ -6,11 +6,37 @@ services:
     ports:
      - "7550:80"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: "http://+:80"
-      pgsqlConnectionString : "Host=db;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
+      pgsqlConnectionString : "Host=db_fluxo_caixa;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
+      RabbitMq__HostName : "rabbitmq"
+      RabbitMq__Port : "5672"
+      RabbitMq__UserName : "guest"
+      RabbitMq__Password : "guest"
+      RabbitMq__Exchange : "fluxo-caixa"
     depends_on:
-      - db
+      db_fluxo_caixa:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  db_fluxo_caixa:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: fluxo_caixa
+      POSTGRES_USER: fluxo_caixa
+      POSTGRES_PASSWORD: fluxo_caixa
+    ports:
+      - "7560:5432"
+    volumes:
+      #- .docker/db_fluxo_caixa_data:/var/lib/postgresql/data
+      - ./entrypoint/db/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluxo_caixa -d mydatabase -h 127.0.0.1"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
 
   consolidado_api:
     build:
@@ -19,21 +45,59 @@ services:
     ports:
      - "7551:80"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: "http://+:80"
-      pgsqlConnectionString : "Host=db;Port=5432;Database=fluxo_caixa;Username=fluxo_caixa;Password=fluxo_caixa"
+      pgsqlConnectionString : "Host=db_consolidado;Port=5432;Database=consolidado;Username=consolidado;Password=consolidado"
     depends_on:
-      - db
-  
+      db_consolidado:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
-  db:
+
+  consolidado-worker:
+    build:
+     context: ./consolidado-worker
+     dockerfile: /src/Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: "http://+:80"
+      pgsqlConnectionString : "Host=db_consolidado;Port=5432;Database=consolidado;Username=consolidado;Password=consolidado"
+      RabbitMQConnection : "amqp://guest:guest@rabbitmq:5672/"
+    depends_on:
+      db_consolidado:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  db_consolidado:
     image: postgres:16
     environment:
-      POSTGRES_DB: fluxo_caixa
-      POSTGRES_USER: fluxo_caixa
-      POSTGRES_PASSWORD: fluxo_caixa
+      POSTGRES_DB: consolidado
+      POSTGRES_USER: consolidado
+      POSTGRES_PASSWORD: consolidado
     ports:
-      - "6015:5432"
+      - "7561:5432"
     volumes:
-      - .docker/db_escrita_data:/var/lib/postgresql/data
+      #- .docker/db_consolidado_data:/var/lib/postgresql/data
       - ./entrypoint/db/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U consolidado -d mydatabase -h 127.0.0.1"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" #  AMQP
+      - "15672:15672" # management UI 
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      #- ./.docker/rabbitmq/data:/var/lib/rabbitmq
+      #- ./.docker/rabbitmq/logs:/var/log/rabbitmq
+      - ./entrypoint/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+      - ./entrypoint/rabbitmq/advanced.config:/etc/rabbitmq/advanced.config

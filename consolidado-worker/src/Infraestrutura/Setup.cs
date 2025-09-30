@@ -1,12 +1,6 @@
 ﻿using Aplicacao.Comum;
-using Aplicacao.Eventos.Lancamentos;
 using Aplicacao.Repositorios;
-using Confluent.Kafka;
-using Dominio.Comum;
-using Dominio.Eventos;
 using Infraestrutura.Contextos;
-using Infraestrutura.Eventos;
-using Infraestrutura.Publicadores;
 using Infraestrutura.Repositorios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,14 +14,6 @@ public static class Setup
     {
         provider.AddTransient<IUnidadeDeTrabalho, UnidadeDeTrabalho>();
         provider.AddTransient<ILancamentoRepositorio, LancamentoRepositorio>();
-        provider.AddScoped<IEventoExecutor<LancamentoCriadoEvento>, LancamentoCriadoEventoExecutor>();
-        provider.AddScoped<IEventoDespachante, EventoDespachante>();
-        provider.AddScoped<IPublicador, RabbitMqPublicador>();
-        provider.Configure<RabbitMqConfiguration>(a =>
-        {
-            configuration.GetSection("RabbitMq").Bind(a);
-        });
-
 
         var connectionString = configuration.GetValue<string>("pgsqlConnectionString");
 

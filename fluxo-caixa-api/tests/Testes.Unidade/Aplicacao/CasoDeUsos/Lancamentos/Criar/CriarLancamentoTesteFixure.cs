@@ -1,5 +1,6 @@
 ﻿using Aplicacao.Comum;
 using Aplicacao.Repositorios;
+using Dominio.Comum;
 using Moq;
 using Testes.Unidade.Comum;
 
@@ -9,6 +10,7 @@ public class CriarLancamentoTesteFixure : LancamentoTesteFixure
 {
     public static Mock<ILancamentoRepositorio> MockRepositorio => new();
     public static Mock<IUnidadeDeTrabalho> MockUnidadeDeTrabalho => new();
+    public static Mock<IEventoDespachante> MockEventoDespachante => new();
 }
 
 [CollectionDefinition(nameof(CriarLancamentoTesteFixure))]
